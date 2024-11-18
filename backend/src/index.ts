@@ -4,6 +4,8 @@ import "dotenv/config";
 import * as mongoose from "mongoose";
 import myUserRoute from "./routes/MyUserRoute";
 
+const PORT = process.env.PORT || 5000;
+
 mongoose
   .connect(process.env.MONGODB_CONNECTION_STRING as string)
   .then(() => console.log("Connected to database"))
@@ -15,6 +17,20 @@ app.use(cors());
 
 app.use("/api/my/user", myUserRoute);
 
-app.listen(7000, () => {
-  console.log("Server is running on port 7000");
+// Start the server and store the instance in `server`
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
+
+// Graceful Shutdown Handlers
+const cleanup = async () => {
+  console.log("Cleaning up resources...");
+  await mongoose.connection.close(); // Close the DB connection
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0); // Exit cleanly
+  });
+};
+
+process.on("SIGTERM", cleanup);
+process.on("SIGINT", cleanup);
