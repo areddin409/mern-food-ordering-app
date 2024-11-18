@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+
 import {
   Form,
   FormControl,
@@ -20,15 +22,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
 import { STATES } from '@/lib/constants.ts';
+import { User } from '@/types.ts';
 
 const formSchema = z.object({
-  email: z.string().optional(),
-  name: z.string().min(1, 'Name is required'),
-  addressLine1: z.string().min(1, 'Address Line 1 is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  zip: z.string().min(1, 'Zip is required'),
+  email: z.string().email('Invalid email address').optional(),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(100, 'Name must be at most 100 characters'),
+  addressLine1: z
+    .string()
+    .min(1, 'Address Line 1 is required')
+    .max(400, 'Address Line 1 must be at most 400 characters'),
+  city: z
+    .string()
+    .min(1, 'City is required')
+    .max(100, 'City must be at most 100 characters'),
+  state: z.string().min(2, 'State is required'),
+  zip: z
+    .string()
+    .min(5, 'Please enter a valid 5-digit zip code')
+    .max(10, 'Zip code cannot be longer than 10 characters')
+    .regex(
+      /^\d{5}(-\d{4})?$/,
+      'Please enter a valid zip code (12345 or 12345-6789)'
+    ),
 });
 
 type UserFormData = z.infer<typeof formSchema>;
@@ -36,12 +56,18 @@ type UserFormData = z.infer<typeof formSchema>;
 type Props = {
   onSave: (userProfileData: UserFormData) => void;
   isLoading: boolean;
+  currentUser: User;
 };
 
-const UserProfileForm = ({ onSave, isLoading }: Props) => {
+const UserProfileForm = ({ onSave, isLoading, currentUser }: Props) => {
   const form = useForm<UserFormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: currentUser,
   });
+
+  useEffect(() => {
+    form.reset(currentUser);
+  }, [currentUser, form]);
 
   return (
     <Form {...form}>
@@ -89,7 +115,7 @@ const UserProfileForm = ({ onSave, isLoading }: Props) => {
           name={'addressLine1'}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address Line 1</FormLabel>
+              <FormLabel>Address</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -137,7 +163,9 @@ const UserProfileForm = ({ onSave, isLoading }: Props) => {
                   </FormControl>
                   <SelectContent className={'bg-white'}>
                     {STATES.map((state) => (
-                      <SelectItem value={state}>{state}</SelectItem>
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

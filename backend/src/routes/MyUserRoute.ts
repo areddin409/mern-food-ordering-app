@@ -5,6 +5,20 @@ import { validateMyUserRequest } from "../middleware/validation";
 
 const router = express.Router();
 
+// /api/my/user
+router.get(
+  "/",
+  jwtCheck,
+  jwtParse,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await MyUserController.getCurrentUser(req, res);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.post(
   "/",
   jwtCheck,
